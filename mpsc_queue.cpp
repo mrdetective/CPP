@@ -14,16 +14,25 @@ public:
     {}
 
     bool push(const T& item) {
-        size_t head = head_.fetch_add(1, std::memory_order_acq_rel);
-        size_t tail = tail_.load(std::memory_order_acquire);
+        size_t head, next_head, tail;
+        do {
+            head = head_.load(std::memory_order_relaxed);
+            tail = tail_.load(std::memory_order_acquire);
 
-        if ((head - tail) >= capacity_) {
-            return false;
-        }
+            if ((head - tail) >= capacity_) {
+                return false; 
+            }
+
+            next_head = head + 1;
+        } while (!head_.compare_exchange_weak(
+                    head, next_head,
+                    std::memory_order_acq_rel,
+                    std::memory_order_relaxed));
 
         buffer_[head & mask_] = item;
         return true;
     }
+
 
     std::optional<T> pop() {
         size_t tail = tail_.load(std::memory_order_relaxed);
