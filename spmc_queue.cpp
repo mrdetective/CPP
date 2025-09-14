@@ -1,7 +1,8 @@
-#include<iostream>
 #include<atomic>
 #include<vector>
 #include<optional>
+#include<cassert>
+
 
 template<typename T>
 class spmc_queue{
